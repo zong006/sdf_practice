@@ -55,7 +55,7 @@ public class Client {
                 }
                 itemCounter += 1;
             }
-            else if (sendingItem){
+            if (sendingItem){
                 if (lineRead.contains("prod_id")){
                     item.setProd_id(lineRead.split(":")[1].trim());    
                 }
