@@ -5,7 +5,7 @@ import java.io.*;
 import java.util.*;
 
 public class Server {
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, InterruptedException {
 
         char[][] board = {  {'1', '2', '3'}, 
                             {'4', '5', '6'}, 
@@ -50,7 +50,7 @@ public class Server {
         
         // let player be X and server be O
         while (!close){
-
+            
             if (!gameStart){ // game start
                 oos.writeObject("Game start. Flipping coin to decide who goes first. You are X");
                 playerTurn = coinFlip();
@@ -65,44 +65,72 @@ public class Server {
                 }
             }
             else  { // game end with draw, win or lose
-                if (gameDraw(freeSpaces, board)){
-                    System.out.println("game ended. Draw.");
-                    oos.writeObject("game ended. Draw.");
+                int result = gameWon(board);
+                boolean draw = gameDraw(freeSpaces, board);
+                if (gameEnd(draw, result)){
+                    if (gameDraw(freeSpaces, board)){
+                        System.out.println("game ended. Draw.");
+                        oos.writeObject("game ended. Draw.");
+                    }
+                    else if (result==1){
+                        System.out.println("game ended. Player wins.");
+                        oos.writeObject("game ended. Player wins.");
+                    }
+                    else if (result==-1){
+                        System.out.println("game ended. Computer wins.");
+                        oos.writeObject("game ended. Computer wins.");
+                    }
+                    gameStart = false;
+                    close = true;
+                    break;
                 }
-                else if (gameWon(board)==1){
-                    System.out.println("game ended. Player wins.");
-                    oos.writeObject("game ended. Player wins.");
-                }
-                else if (gameWon(board)==-1){
-                    System.out.println("game ended. Computer wins.");
-                    oos.writeObject("game ended. Computer wins.");
-                }
-                gameStart = false;
-                close = true;
-                break;
             }
-            
-            if (playerTurn){
-                String playerInput = br.readLine(); // player input is a position on the board that is not taken 
+            oos.flush();
 
+            String playerInput = "";
+            String serverMove = "";
+            
+
+            if (playerTurn){
+                oos.writeObject("Player's turn.");    
+                oos.writeObject(board); // 1. send board
+                oos.flush();
+                
+                playerInput = br.readLine(); // player input is a position on the board that is not taken 
+                System.out.println(playerInput);
                 if (validMove(freeSpaces, playerInput)){
+                    oos.writeObject("Player picked " + playerInput); // 2. send string
                     updateBoard(board, playerInput, playerTurn);
                     updateFreeSpaces(freeSpaces, playerInput);
-                    oos.writeObject(board);
                     playerTurn = false;
+
                 }
                 else{
-                    System.out.println("Choose unoccupied tile.");
-                    oos.writeObject("Choose unoccupied tile.");
+                    System.out.println("Tile is occupied. Choose unoccupied tile.");
+                    oos.writeObject("Tile is occupied. Choose unoccupied tile.");
                 }
+                oos.flush();
             }
             else {
-                int serverMove = chooseRandomMove(freeSpaces);
-                updateBoard(board, Integer.toString(serverMove), playerTurn);
-                updateFreeSpaces(freeSpaces, Integer.toString(serverMove));
-                oos.writeObject(board);
+                oos.writeObject("Computer's turn.");
+                serverMove = chooseRandomMove(freeSpaces);
+                updateBoard(board, serverMove, playerTurn);
+                updateFreeSpaces(freeSpaces, serverMove);
+                oos.writeObject("Computer picked " + serverMove); // 1. send string
+                oos.flush();
                 playerTurn = true;
             }
+
+            // String move = playerTurn? playerInput : serverMove;
+            // updateBoard(board, move, playerTurn);
+            // updateFreeSpaces(freeSpaces, move);
+            // oos.flush();
+            
+            // playerTurn = playerTurn? false : true;
+            printBoard(board); //remove later. nothing wrong with this
+
+            Thread.sleep(2000);
+            
         }
 
     }
@@ -135,29 +163,21 @@ public class Server {
     }
 
     public static boolean validMove(boolean[] freeSpaces, String playerInput){
-        if (freeSpaces[Integer.parseInt(playerInput)-1]){
-            return true;
-        }
-        return false;
+        return (freeSpaces[Integer.parseInt(playerInput)-1]? true : false);
     }
 
     public static void updateBoard(char[][] board, String move, boolean playerTurn){
         int row = (Integer.parseInt(move)-1)/3;
         int col = (Integer.parseInt(move)-1)%3;
 
-        if (playerTurn){
-            board[row][col] = 'X';
-        }
-        else {
-            board[row][col] = 'O';
-        }
+        board[row][col] = playerTurn? 'X' : 'O';
     }
 
     public static void updateFreeSpaces(boolean[] freeSpaces, String move){
         freeSpaces[Integer.parseInt(move)-1] = false;
     }
 
-    public static int chooseRandomMove(boolean[] freeSpaces){ 
+    public static String chooseRandomMove(boolean[] freeSpaces){ 
         Random r = new Random();
         List<Integer> freeIndex = new ArrayList<>();
         for (int i=0 ;i < freeSpaces.length ; i++){
@@ -165,8 +185,7 @@ public class Server {
                 freeIndex.add(i);
             }
         }
-        System.out.println(freeIndex);
-        return freeIndex.get(r.nextInt(freeIndex.size()))+1;
+        return Integer.toString(freeIndex.get(r.nextInt(freeIndex.size()))+1);
     }
 
     public static int gameWon(char[][] board){
@@ -227,24 +246,15 @@ public class Server {
     }
 
     public static boolean gameDraw(boolean[]freeSpaces, char[][] board){
-        // boolean someoneWon = gameWon(board);
         int numOfFreeSpaces = 0;
         for (boolean b : freeSpaces){
-            if (b){
-                numOfFreeSpaces += 1;
-            }
+            numOfFreeSpaces = b? numOfFreeSpaces+1 : numOfFreeSpaces;
         }
-        if (numOfFreeSpaces==0 && gameWon(board)==0){
-            return true;
-        }
-        return false;
+        return ((numOfFreeSpaces==0 && gameWon(board)==0)? true : false);
     }
 
-    public static int gameEnd(boolean draw, int result){
-        if (draw) return 0;
-        else return result;
+    public static boolean gameEnd(boolean draw, int result){
+        return ((draw || result==1 || result==-1)? true : false);
     }
-
-    
 }
 
