@@ -63,29 +63,31 @@ public class Server {
                     System.out.println("Computer goes first");
                     oos.writeObject("Computer goes first");
                 }
+                oos.flush();
             }
             else  { // game end with draw, win or lose
                 int result = gameWon(board);
                 boolean draw = gameDraw(freeSpaces, board);
                 if (gameEnd(draw, result)){
+                    oos.writeObject("game ended.");
                     if (gameDraw(freeSpaces, board)){
                         System.out.println("game ended. Draw.");
-                        oos.writeObject("game ended. Draw.");
+                        oos.writeObject("Draw.");
                     }
                     else if (result==1){
                         System.out.println("game ended. Player wins.");
-                        oos.writeObject("game ended. Player wins.");
+                        oos.writeObject("Player wins.");
                     }
                     else if (result==-1){
                         System.out.println("game ended. Computer wins.");
-                        oos.writeObject("game ended. Computer wins.");
+                        oos.writeObject("Computer wins.");
                     }
                     gameStart = false;
                     close = true;
+                    oos.flush();
                     break;
                 }
             }
-            oos.flush();
 
             String playerInput = "";
             String serverMove = "";
@@ -121,17 +123,13 @@ public class Server {
                 playerTurn = true;
             }
 
-            // String move = playerTurn? playerInput : serverMove;
-            // updateBoard(board, move, playerTurn);
-            // updateFreeSpaces(freeSpaces, move);
-            // oos.flush();
-            
-            // playerTurn = playerTurn? false : true;
             printBoard(board); //remove later. nothing wrong with this
 
             Thread.sleep(2000);
             
         }
+
+        socket.close();
 
     }
     
