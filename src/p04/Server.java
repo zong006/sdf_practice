@@ -91,18 +91,15 @@ public class Server {
 
             String playerInput = "";
             String serverMove = "";
-            
-
             if (playerTurn){
                 oos.writeObject("Player's turn.");    
-                oos.writeObject(board); // 1. send board
+                // oos.writeObject(board); // 1. send board. commented out, technically not needed
                 oos.flush();
                 
                 playerInput = br.readLine(); // player input is a position on the board that is not taken 
-                System.out.println(playerInput);
                 if (validMove(freeSpaces, playerInput)){
                     oos.writeObject("Player picked " + playerInput); // 2. send string
-                    updateBoard(board, playerInput, playerTurn);
+                    board = updateBoard(board, playerInput, playerTurn);
                     updateFreeSpaces(freeSpaces, playerInput);
                     playerTurn = false;
 
@@ -112,17 +109,19 @@ public class Server {
                     oos.writeObject("Tile is occupied. Choose unoccupied tile.");
                 }
                 oos.flush();
+                System.out.println("Player picked: " + playerInput);
             }
             else {
                 oos.writeObject("Computer's turn.");
                 serverMove = chooseRandomMove(freeSpaces);
-                updateBoard(board, serverMove, playerTurn);
+                board = updateBoard(board, serverMove, playerTurn);
                 updateFreeSpaces(freeSpaces, serverMove);
                 oos.writeObject("Computer picked " + serverMove); // 1. send string
                 oos.flush();
                 playerTurn = true;
+                System.out.println("Computer picked: " + serverMove);
             }
-
+            
             printBoard(board); //remove later. nothing wrong with this
 
             Thread.sleep(2000);
@@ -135,7 +134,7 @@ public class Server {
     
     public static void printBoard(char[][] board) { // copy from stack overflow
         System.out.println();
-        System.out.println("Choose position below not marked by 'X' or 'O' ");
+        // System.out.println("Choose position below not marked by 'X' or 'O' ");
         System.out.println();
         System.out.println("  ┌───┬───┬───┐");
         System.out.println("  │ "
@@ -164,11 +163,12 @@ public class Server {
         return (freeSpaces[Integer.parseInt(playerInput)-1]? true : false);
     }
 
-    public static void updateBoard(char[][] board, String move, boolean playerTurn){
+    public static char[][] updateBoard(char[][] board, String move, boolean playerTurn){
         int row = (Integer.parseInt(move)-1)/3;
         int col = (Integer.parseInt(move)-1)%3;
 
         board[row][col] = playerTurn? 'X' : 'O';
+        return board;
     }
 
     public static void updateFreeSpaces(boolean[] freeSpaces, String move){
