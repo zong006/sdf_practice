@@ -4,7 +4,7 @@ public class Item {
     private String prod_id;
     private String title;
     private float price;
-    private int rating;
+    private float rating;
     
     public String getProd_id() {
         return prod_id;
@@ -24,10 +24,10 @@ public class Item {
     public void setPrice(float price) {
         this.price = price;
     }
-    public int getRating() {
+    public float getRating() {
         return rating;
     }
-    public void setRating(int rating) {
+    public void setRating(float rating) {
         this.rating = rating;
     }
     
