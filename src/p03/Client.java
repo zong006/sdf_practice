@@ -26,13 +26,12 @@ public class Client {
         String lineRead = "";
         Item item = null;
         int itemCounter = 0;
-        boolean stopReadingItems = false;
 
         Map<String, String> fromServer = new HashMap<>();
         List<Item> items = new ArrayList<>();
 
-        while ((lineRead = br.readLine())!=null && !stopReadingItems){
-            
+        while ((lineRead = br.readLine())!=null){
+        
             if (lineRead.contains("request_id")){
                 fromServer.put(lineRead.split(":")[0].trim(), lineRead.split(":")[1].trim());
             }
@@ -67,18 +66,22 @@ public class Client {
                     item.setPrice(price);
                 }
                 else if (lineRead.contains("rating")){
-                    int rating = Integer.parseInt(lineRead.split(":")[1].trim());
+                    float rating = Float.parseFloat(lineRead.split(":")[1].trim());
                     item.setRating(rating);
                 }
                 else {continue;}
             }
             if (fromServer.containsKey("item_count") && itemCounter==Integer.parseInt(fromServer.get("item_count"))){
-                stopReadingItems = true;
+                break;
             }
         }
 
+        System.out.println("item details sent over"); //remove 
+
         sortItems(items);
         List<Item> selectedItems = greedy(items, Float.parseFloat(fromServer.get("budget")));
+
+        System.out.println("items selected by greedy"); //remove
 
         // send it back to the server
         String selectedItemID = "";
